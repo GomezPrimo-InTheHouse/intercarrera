@@ -1,42 +1,40 @@
+/* Aseguramos que el root ocupe toda la pantalla */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Fondo del panel derecho con la imagen del robot */
+.robot-bg {
+  background-image: url("/robot-login.jpeg"); /* Imagen dentro de public/ */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100%;
+  width: 100%;
+  position: relative;
 }
 
-@keyframes logo-spin {
+/* Capa de luz animada (efecto futurista) */
+.robot-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(0, 100, 255, 0.3),
+    rgba(0, 0, 50, 0.7)
+  );
+  animation: lightmove 6s infinite alternate;
+}
+
+@keyframes lightmove {
   from {
-    transform: rotate(0deg);
+    background-position: 0% 0%;
   }
   to {
-    transform: rotate(360deg);
+    background-position: 100% 100%;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
