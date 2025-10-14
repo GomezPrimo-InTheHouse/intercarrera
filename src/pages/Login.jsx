@@ -87,15 +87,12 @@ export default function Login() {
           </p>
 
           <button
-            onClick={() =>
-              loginWithRedirect({
-                appState: { returnTo: "/dashboard" },
-              })
-            }
-            className="w-full py-3 bg-[#5C7A8B] text-white font-semibold rounded-xl hover:bg-[#4c6977] transition-all duration-300 shadow-sm"
-          >
-            Iniciar sesión con Auth0
-          </button>
+  onClick={handleLogin}
+  className="w-full py-3 bg-[#5C7A8B] text-white font-semibold rounded-xl hover:bg-[#4c6977] transition-all duration-300 shadow-sm"
+>
+  Iniciar sesión con Auth0
+</button>
+
 
           <div className="mt-6 text-center">
             <p className="text-sm text-[#979590]">
@@ -118,3 +115,5 @@ export default function Login() {
     </div>
   );
 }
+
+
