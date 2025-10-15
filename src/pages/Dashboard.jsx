@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import VoiceCommand from "../components/voiceCommand/voiceCommand";
 
 export default function Dashboard() {
     const { user, logout } = useAuth0();
@@ -121,6 +122,12 @@ export default function Dashboard() {
                         </table>
                     </div>
                 </section>
+
+                {/* voice command */}
+
+                <div className="p-6 md:p-10">
+                    <VoiceCommand />
+                </div>
             </main>
         </div>
     );
