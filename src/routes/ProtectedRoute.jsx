@@ -6,13 +6,15 @@ export default function ProtectedRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div className="grid place-items-center h-screen">
-        <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+      <div className="h-screen flex justify-center items-center">
+        <div className="w-10 h-10 border-4 border-[#5C7A8B] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 }

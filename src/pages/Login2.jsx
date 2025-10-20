@@ -1,13 +1,15 @@
-import { useAuth0 } from "@auth0/auth0-react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useNotify } from "../context/NotifyContext";
+import useAuth from "../hooks/UseAuth";
+import LoginForm from "../components/auth/LoginForm";
 
 export default function Login() {
-  const { loginWithRedirect, isAuthenticated, isLoading, error } = useAuth0();
+  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-[#D8D8D8]">
         <div className="w-10 h-10 border-4 border-[#5C7A8B] border-t-transparent rounded-full animate-spin" />
@@ -15,41 +17,9 @@ export default function Login() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen text-red-600">
-        <p>Error al iniciar sesión: {error.message}</p>
-      </div>
-    );
-  }
-
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
-
-const handleLogin = async () => {
-  try {
-    await loginWithRedirect({
-      appState: { returnTo: "/dashboard" },
-      // ❌ quitamos connection: "google-oauth2"
-      // ❌ quitamos screen_hint
-    });
-  } catch (e) {
-    console.error("[Auth0] Error al iniciar sesión:", e);
-  }
-};
-
-
-  const handleSignup = async () => {
-    try {
-      await loginWithRedirect({
-        screen_hint: "signup",
-        appState: { returnTo: from },
-      });
-    } catch (e) {
-      console.error("[Auth0] Error signup:", e);
-    }
-  };
 
   return (
     <div
@@ -84,33 +54,15 @@ const handleLogin = async () => {
           </h2>
           <p className="text-center text-[#979590] mb-6">Accedé con tu cuenta segura</p>
 
-          <div className="space-y-3">
-            <button
-              onClick={handleLogin}
-              className="w-full py-3 bg-[#5C7A8B] text-white font-semibold rounded-xl hover:bg-[#4c6977] transition-all duration-300 shadow-sm"
-            >
-              Iniciar sesión con Auth0
-            </button>
-
-            <button
-              onClick={() =>
-                loginWithRedirect({
-                  connection: "google-oauth2",
-                  appState: { returnTo: from },
-                })
-              }
-              className="w-full py-3 bg-white border border-[#979590] rounded-xl hover:bg-[#D7BFA8] transition"
-            >
-              Continuar con Google
-            </button>
-          </div>
+          {/* 🔁 Reemplazo de los botones de Auth0 por tu formulario propio */}
+          <LoginForm />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-[#979590]">
               ¿No tenés cuenta?{" "}
-              <button onClick={handleSignup} className="text-[#5C7A8B] font-semibold hover:underline">
+              <Link to="/register" className="text-[#5C7A8B] font-semibold hover:underline">
                 Registrate aquí
-              </button>
+              </Link>
             </p>
           </div>
         </motion.div>
