@@ -1,6 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { motion } from "framer-motion";
-import FloatingBot from "../components/bot/FloatingBot";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -29,18 +28,17 @@ export default function Login() {
       </div>
     );
   }
-  
-  const handleLogin = async () => {
-  try {
-    await loginWithRedirect({
-      appState: { returnTo: "/dashboard" },
-      screen_hint: "login",
-    });
-  } catch (e) {
-    console.error("Error al intentar loguearse:", e);
-  }
-};
 
+  const handleLogin = async () => {
+    try {
+      await loginWithRedirect({
+        appState: { returnTo: "/dashboard" },
+        screen_hint: "login",
+      });
+    } catch (e) {
+      console.error("Error al intentar loguearse:", e);
+    }
+  };
 
   return (
     <div
@@ -60,11 +58,18 @@ export default function Login() {
         ></div>
         <div className="absolute inset-0 bg-[#5C7A8B]/60"></div>
 
-        {/* Robot animado */}
-        <FloatingBot />
-
+        {/* CONTENIDO PRINCIPAL IZQUIERDO */}
         <div className="relative z-10 flex flex-col justify-center items-center px-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Bienvenido</h1>
+          {/* Fondo sólido detrás del logo */}
+          <div className="bg-[#F5F7FA] rounded-2xl p-4 shadow-lg mb-6 flex items-center justify-center">
+            <img
+              src="/src/assets/logoSinFondo.png"
+              alt="Logo"
+              className="w-40 h-auto object-contain"
+            />
+          </div>
+
+          <h1 className="text-4xl font-bold mb-4 text-white">Bienvenido</h1>
           <p className="text-[#D8D8D8] max-w-sm">
             Gestioná tus datos con seguridad e inteligencia.
           </p>
@@ -87,12 +92,11 @@ export default function Login() {
           </p>
 
           <button
-  onClick={handleLogin}
-  className="w-full py-3 bg-[#5C7A8B] text-white font-semibold rounded-xl hover:bg-[#4c6977] transition-all duration-300 shadow-sm"
->
-  Iniciar sesión con Auth0
-</button>
-
+            onClick={handleLogin}
+            className="w-full py-3 bg-[#5C7A8B] text-white font-semibold rounded-xl hover:bg-[#4c6977] transition-all duration-300 shadow-sm"
+          >
+            Iniciar sesión con Auth0
+          </button>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-[#979590]">
@@ -115,5 +119,3 @@ export default function Login() {
     </div>
   );
 }
-
-
