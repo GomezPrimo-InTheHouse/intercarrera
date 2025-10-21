@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Square, Play } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ControlesRobot() {
   const [activo, setActivo] = useState(false);
@@ -17,43 +17,55 @@ export default function ControlesRobot() {
       className="flex flex-col items-center justify-center h-full"
     >
       <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6 flex flex-col items-center justify-center space-y-4">
-        {/* Botón hacia arriba */}
+        {/* Botón arriba */}
         <button className="control-btn">
           <ArrowUp size={22} />
         </button>
 
-        {/* Fila del medio */}
+        {/* Fila central */}
         <div className="flex space-x-6">
           <button className="control-btn">
             <ArrowLeft size={22} />
           </button>
 
-          {/* Botón central */}
-          <button
+          {/* Botón central animado */}
+          <motion.button
             onClick={handleCentralClick}
             className={`control-btn transition-all ${
               activo ? "bg-green-500 hover:bg-green-600" : "bg-red-400 hover:bg-red-500"
             }`}
+            whileTap={{ scale: 0.9 }}
           >
-            {activo ? <Play size={22} /> : <Square size={22} />}
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activo ? "play" : "stop"}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activo ? <Play size={22} /> : <Square size={22} />}
+              </motion.div>
+            </AnimatePresence>
+          </motion.button>
 
           <button className="control-btn">
             <ArrowRight size={22} />
           </button>
         </div>
 
-        {/* Botón hacia abajo */}
+        {/* Botón abajo */}
         <button className="control-btn">
           <ArrowDown size={22} />
         </button>
       </div>
 
+      {/* Estilos */}
       <style>
         {`
           .control-btn {
             background-color: white;
-            color: #1f2937; /* gris oscuro */
+            color: #1f2937;
             border-radius: 9999px;
             width: 50px;
             height: 50px;
