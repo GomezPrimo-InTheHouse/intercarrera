@@ -1,20 +1,22 @@
-
-
-
 /* eslint-disable react/prop-types */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { getLastHistorialSpotify } from "../../api/conectionApi";
-import SpinnerOverlay from "../ui/SpinnerOverlay.jsx"; 
+import SpinnerOverlay from "../ui/SpinnerOverlay.jsx";
 import { on } from "../../utils/eventBus";
 
-function classNames(...xs) {
-  return xs.filter(Boolean).join(" ");
-}
+function cx(...xs) { return xs.filter(Boolean).join(" "); }
 
 function formatConfidence(c) {
   const n = typeof c === "string" ? parseFloat(c) : c;
   if (Number.isNaN(n)) return { label: "-", pct: 0 };
-  return { label: `${(n * 100).toFixed(0)}%`, pct: Math.max(0, Math.min(100, n * 100)) };
+  const pct = Math.max(0, Math.min(100, n * 100));
+  return { label: `${pct.toFixed(0)}%`, pct };
+}
+
+function confidenceColor(pct) {
+  if (pct >= 70) return "#16a34a"; // verde
+  if (pct >= 40) return "#f59e0b"; // amarillo
+  return "#dc2626";                // rojo
 }
 
 function formatDateIsoToLocal(iso) {
@@ -55,7 +57,10 @@ function Pill({ children, tone = "neutral", title }) {
   };
   return (
     <span
-      className={classNames("inline-flex items-center px-2 py-0.5 text-xs rounded-full", tones[tone] || tones.neutral)}
+      className={cx(
+        "inline-flex items-center px-2 py-0.5 text-xs rounded-full select-none",
+        tones[tone] || tones.neutral
+      )}
       title={title}
     >
       {children}
@@ -66,42 +71,40 @@ function Pill({ children, tone = "neutral", title }) {
 export default function SpotifyHistorialTable({
   className = "",
   showSearch = true,
+  pageSize = 10, // respeta el pageSize que le pasás
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
-  const [busy, setBusy] = useState(false); // ✅ estado para overlay/spinner
+  const [busy, setBusy] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setErr("");
+      const res = await getLastHistorialSpotify();
+      if (!res?.success) throw new Error("Respuesta no exitosa");
+      const data = Array.isArray(res.data) ? res.data : [];
+      setRows(data);
+    } catch (e) {
+      setErr(e?.message || "Error al cargar datos");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-
-    async function fetchData() {
-      try {
-        setErr("");
-        const res = await getLastHistorialSpotify();
-        if (!res?.success) throw new Error("Respuesta no exitosa");
-        const data = Array.isArray(res.data) ? res.data : [];
-        if (mounted) setRows(data);
-      } catch (e) {
-        setErr(e?.message || "Error al cargar datos");
-      } finally {
-        setLoading(false);
-      }
-    }
-
     setLoading(true);
     fetchData();
 
-    // Refetch al crear un nuevo historial
-    const unsub = on("spotify:newHistorial", () => fetchData());
+    // Refetch cuando llega nuevo historial
+    const unsub = on("spotify:newHistorial", () => mounted && fetchData());
+    const offPending = on("spotify:newHistorial:pending", () => mounted && setBusy(true));
+    const offDone    = on("spotify:newHistorial:done",    () => mounted && setBusy(false));
 
-    // Spinner ON/OFF según envío
-    const offPending = on("spotify:newHistorial:pending", () => setBusy(true));
-    const offDone    = on("spotify:newHistorial:done",    () => setBusy(false));
-
-    // Polling opcional cada 30s
-    const interval = setInterval(fetchData, 30000);
+    // Polling opcional
+    const interval = setInterval(() => mounted && fetchData(), 30000);
 
     return () => {
       mounted = false;
@@ -110,7 +113,7 @@ export default function SpotifyHistorialTable({
       offPending();
       offDone();
     };
-  }, []);
+  }, [fetchData]);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return rows;
@@ -126,51 +129,65 @@ export default function SpotifyHistorialTable({
     });
   }, [rows, q]);
 
-  // —— Estilos de tarjeta contenedora
+  // simple paginación (client-side)
+  const pageRows = useMemo(
+    () => (pageSize > 0 ? filtered.slice(0, pageSize) : filtered),
+    [filtered, pageSize]
+  );
+
   return (
-    <div className={classNames("w-full", className)}>
-      {/* Header */}
+    <div className={cx("w-full", className)}>
+      {/* Toolbar */}
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          {/* <h2 className="text-lg font-semibold text-gray-900">Historial de comandos Spotify</h2> */}
-          <div className="text-sm text-gray-600">Registros de comandos de voz enviados a Spotify</div>
+        <div className="text-sm text-gray-600">
+          Registros de comandos de voz enviados a Spotify
         </div>
-        {showSearch && (
-          <div className="relative w-full md:w-80">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar acción, tipo, query, artista…"
-              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 pr-9 text-sm outline-none focus:border-gray-400"
-            />
-            <svg
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-            >
-              <path fillRule="evenodd" d="M10 2a8 8 0 015.292 13.707l4 4a1 1 0 01-1.414 1.414l-4-4A8 8 0 1110 2zm0 2a6 6 0 100 12A6 6 0 0010 4z" clipRule="evenodd" />
-            </svg>
-          </div>
-        )}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {showSearch && (
+            <div className="relative w-full md:w-80">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar acción, tipo, query, artista…"
+                className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 pr-9 text-sm outline-none focus:border-gray-400"
+                aria-label="Buscar en historial"
+              />
+              <svg
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                aria-hidden="true"
+              >
+                <path fillRule="evenodd" d="M10 2a8 8 0 015.292 13.707l4 4a1 1 0 01-1.414 1.414l-4-4A8 8 0 1110 2zm0 2a6 6 0 100 12A6 6 0 0010 4z" clipRule="evenodd" />
+              </svg>
+            </div>
+          )}
+          <button
+            onClick={() => { setLoading(true); fetchData(); }}
+            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 active:scale-[0.99] transition"
+            aria-label="Refrescar historial"
+            title="Refrescar"
+          >
+            Refrescar
+          </button>
+        </div>
       </div>
 
-      {/* Tabla */}
+      {/* Card container */}
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {/* ✅ Overlay con spinner */}
         <SpinnerOverlay visible={busy} label="Procesando comando…" />
 
-        {/* Contenido atenuado cuando busy */}
         <div className={busy ? "pointer-events-none select-none opacity-50" : ""}>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-gray-700 text-xs uppercase tracking-wide sticky top-0 z-10">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Fecha</th>
-                  <th className="px-4 py-3 text-left font-medium">Acción</th>
-                  <th className="px-4 py-3 text-left font-medium">Tipo</th>
-                  <th className="px-4 py-3 text-left font-medium">Query</th>
-                  <th className="px-4 py-3 text-left font-medium">Artista</th>
-                  <th className="px-4 py-3 text-left font-medium">Álbum</th>
-                  <th className="px-4 py-3 text-left font-medium">Confianza</th>
+            <table className="min-w-full text-sm table-fixed">
+              <thead className="sticky top-0 z-10 bg-white/80 backdrop-blur">
+                <tr className="text-left text-[11px] uppercase tracking-wide text-gray-600 border-b border-gray-100">
+                  <th className="px-4 py-3 font-medium w-[160px]">Fecha</th>
+                  <th className="px-4 py-3 font-medium w-[110px]">Acción</th>
+                  <th className="px-4 py-3 font-medium w-[110px]">Tipo</th>
+                  <th className="px-4 py-3 font-medium">Query</th>
+                  <th className="px-4 py-3 font-medium w-[180px]">Artista</th>
+                  <th className="px-4 py-3 font-medium w-[180px] hidden md:table-cell">Álbum</th>
+                  <th className="px-4 py-3 font-medium w-[150px]">Confianza</th>
                 </tr>
               </thead>
 
@@ -193,7 +210,7 @@ export default function SpotifyHistorialTable({
                   </tr>
                 )}
 
-                {!loading && !err && filtered.length === 0 && (
+                {!loading && !err && pageRows.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-gray-600">
                       No hay datos para mostrar.
@@ -201,16 +218,22 @@ export default function SpotifyHistorialTable({
                   </tr>
                 )}
 
-                {!loading && !err && filtered.map((r, idx) => {
+                {!loading && !err && pageRows.map((r, idx) => {
                   const conf = formatConfidence(r.confidence);
                   const isEven = idx % 2 === 0;
+                  const actionTone =
+                    r.action === "play"
+                      ? "success"
+                      : r.action === "unknown"
+                      ? "warning"
+                      : "slate";
+
                   return (
                     <tr
-                      key={r.id}
-                      className={classNames(
-                        "transition-colors",
+                      key={r.id ?? `${r.created_at}-${idx}`}
+                      className={cx(
                         isEven ? "bg-white" : "bg-gray-50/60",
-                        "hover:bg-gray-50"
+                        "hover:bg-gray-50 transition-colors"
                       )}
                     >
                       {/* Fecha */}
@@ -220,50 +243,66 @@ export default function SpotifyHistorialTable({
 
                       {/* Acción */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Pill tone={r.action === "play" ? "success" : r.action === "unknown" ? "warning" : "slate"}>
+                        <Pill tone={actionTone} title={`Acción: ${r.action ?? "-"}`}>
                           {r.action ?? "-"}
                         </Pill>
                       </td>
 
                       {/* Tipo */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Pill tone={r.type ? "info" : "neutral"}>{r.type ?? "-"}</Pill>
+                        <Pill tone={r.type ? "info" : "neutral"} title={`Tipo: ${r.type ?? "-"}`}>
+                          {r.type ?? "-"}
+                        </Pill>
                       </td>
 
                       {/* Query */}
-                      <td className="px-4 py-3 max-w-[22rem]">
-                        <div className="truncate text-gray-900" title={r.query ?? ""}>
+                      <td className="px-4 py-3">
+                        <div
+                          className="truncate text-gray-900"
+                          title={r.query ?? ""}
+                        >
                           {r.query ?? "-"}
                         </div>
-                        {/* Línea secundaria opcional (transcript corto) */}
                         {r.transcript && (
-                          <div className="mt-0.5 text-xs text-gray-500 truncate" title={r.transcript}>
+                          <div
+                            className="mt-0.5 text-xs text-gray-500 truncate"
+                            title={r.transcript}
+                          >
                             {r.transcript}
                           </div>
                         )}
                       </td>
 
                       {/* Artista */}
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-900">
-                        {r.artist ?? "-"}
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-900" title={r.artist ?? ""}>
+                        <span className="truncate inline-block max-w-[170px] align-bottom">
+                          {r.artist ?? "-"}
+                        </span>
                       </td>
 
-                      {/* Álbum */}
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-900">
-                        {r.album ?? "-"}
+                      {/* Álbum (oculto en mobile) */}
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-900 hidden md:table-cell" title={r.album ?? ""}>
+                        <span className="truncate inline-block max-w-[170px] align-bottom">
+                          {r.album ?? "-"}
+                        </span>
                       </td>
 
-                      {/* Confianza (barra + label) */}
+                      {/* Confianza */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="relative h-2 w-24 rounded-full bg-gray-200 ring-1 ring-gray-200">
+                          <div className="relative h-2 w-28 rounded-full bg-gray-200 ring-1 ring-gray-200">
                             <div
-                              className="absolute left-0 top-0 h-2 rounded-full bg-gray-800"
-                              style={{ width: `${conf.pct}%` }}
+                              className="absolute left-0 top-0 h-2 rounded-full"
+                              style={{
+                                width: `${conf.pct}%`,
+                                backgroundColor: confidenceColor(conf.pct),
+                              }}
                               aria-hidden
                             />
                           </div>
-                          <span className="text-xs text-gray-700 tabular-nums">{conf.label}</span>
+                          <span className="text-xs text-gray-700 tabular-nums">
+                            {conf.label}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -273,15 +312,24 @@ export default function SpotifyHistorialTable({
             </table>
           </div>
 
-          {/* Footer de estado */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-gray-600">
-            <span>{loading ? "Cargando…" : `${filtered.length} registro(s)`}{rows.length !== filtered.length ? ` (filtrado de ${rows.length})` : ""}</span>
-            <span className="hidden md:inline">{busy ? "Enviando comando…" : "Actualizando en tiempo real"}</span>
+          {/* Footer */}
+          <div
+            className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-gray-600"
+            aria-live="polite"
+          >
+            <span>
+              {loading ? "Cargando…" : `${filtered.length} registro(s)`}
+              {rows.length !== filtered.length ? ` (filtrado de ${rows.length})` : ""}
+              {pageSize > 0 && filtered.length > pageSize ? ` — mostrando ${pageSize}` : ""}
+            </span>
+            <span className="hidden md:inline">
+              {busy ? "Enviando comando…" : "Actualizando en tiempo real"}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Mobile helper: hint */}
+      {/* Hint mobile */}
       <div className="mt-2 text-xs text-gray-500 md:hidden">
         Desliza horizontalmente si se ocultan columnas.
       </div>

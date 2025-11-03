@@ -123,7 +123,6 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:40
 export const API_BASE_URL_V2 = import.meta.env.VITE_API_URL_V2 || "http://http://localhost:4000";
 
 
-
 export function waitForSpotifyAuthOK({ popupRef, timeoutMs = 60000 }) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -370,4 +369,29 @@ export async function getLastHistorialSpotify (){
     console.error("❌ Error en getLastHistorial:", error);
     return { historial: [] };
   }
+}
+
+
+
+// comando para enviar solo texto
+
+export async function postSpotifyComando(orden) {
+  // Devuelve { success, mensaje, track } o lanza error con {status, data}
+  try {
+    const { data } = await axios.post(`${API_BASE_URL_V2}/api/spotify/comando`, { orden }, { timeout: 15000 });
+    return data;
+  } catch (err) {
+    // Normalizamos error
+    const status = err?.response?.status || 0;
+    const data = err?.response?.data;
+    const e = new Error(data?.error || err.message || "Error ejecutando comando");
+    e.status = status;
+    e.data = data;
+    throw e;
+  }
+}
+
+export async function getSpotifyStatus() {
+  const { data } = await axios.get(`${API_BASE_URL_V2}/api/spotify/status`, { timeout: 10000 });
+  return data; // { authenticated: boolean, loginUrl: string }
 }
