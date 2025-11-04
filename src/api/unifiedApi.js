@@ -333,7 +333,7 @@ export async function getAiStatus() {
 
 export async function getLastHistorialSpotify() {
   try {
-    const res = await fetch(`${API_BASE_URL_V2}/api/spotify-db/historial/last`);
+    const res = await fetch(`${API_BASE_URL_BACKEND}/api/spotify-db/historial/last`);
     if (!res.ok) throw new Error("Error al obtener el historial");
     return await res.json();
   } catch (error) {
