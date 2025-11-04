@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { getLastHistorialSpotify } from "../../api/conectionApi";
+import { getLastHistorialSpotify } from "../../api/unifiedApi.js";
 import SpinnerOverlay from "../ui/SpinnerOverlay.jsx";
 import { on } from "../../utils/eventBus";
 

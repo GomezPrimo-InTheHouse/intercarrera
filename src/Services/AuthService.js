@@ -1,5 +1,5 @@
 // src/services/AuthService.js
-import api from "../api/axios.js";
+import api from "../api/unifiedApi.js";
 import axios from "axios";
 
 const API_URL = "http://localhost:4000";

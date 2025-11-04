@@ -44,11 +44,9 @@
 
 
 // src/context/AuthContext.jsx
-// src/context/AuthContext.jsx
-// src/context/AuthContext.jsx
 import { createContext, useEffect, useMemo, useState } from "react";
 import AuthService from "../Services/AuthService.js";
-import api from "../api/axios.js";
+import api from "../api/unifiedApi.js";
 import { parseJwt, isTokenExpired } from "../utils/jwt.jsx";
 
 export const AuthContext = createContext(null);
@@ -62,40 +60,40 @@ export function AuthProvider({ children }) {
     return parseJwt(accessToken);
   }, [accessToken]);
 
+  // 🚀 INIT: si el access está vencido pero hay refresh, intenta renovarlo
   useEffect(() => {
     const initAuth = async () => {
       try {
-        console.debug("[AuthContext.init] VITE_API_URL_BACKEND =", import.meta.env.VITE_API_URL_BACKEND);
         const at = localStorage.getItem("accessToken");
         const rt = localStorage.getItem("refreshToken");
 
         if (at && !isTokenExpired(at)) {
           api.defaults.headers.common["Authorization"] = `Bearer ${at}`;
           setAccessToken(at);
-          console.debug("[AuthContext.init] Access válido, no refresco");
+          setLoading(false);
           return;
         }
 
+        // access vencido o ausente: intentar refresh proactivo
         if (rt) {
-          console.debug("[AuthContext.init] FORZANDO refresh con RT presente");
-          const data = await AuthService.refreshAccessToken();
+          const data = await AuthService.refreshAccessToken(); // usa { refreshToken } internamente
           if (data?.accessToken) {
             localStorage.setItem("accessToken", data.accessToken);
             if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
             api.defaults.headers.common["Authorization"] = `Bearer ${data.accessToken}`;
             setAccessToken(data.accessToken);
-            console.debug("[AuthContext.init] Refresh OK");
+            setLoading(false);
             return;
           }
         }
 
-        console.debug("[AuthContext.init] No RT o refresh falló → sesión nula");
+        // no hay refresh válido → sesión caída
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("auth_email");
         delete api.defaults.headers.common["Authorization"];
-      } catch (e) {
-        console.debug("[AuthContext.init] Refresh lanzó error:", e?.message);
+      } catch {
+        // si falla el refresh, limpiamos
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("auth_email");
@@ -108,6 +106,7 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
+  // Mantener Authorization si cambia el access en runtime
   useEffect(() => {
     if (accessToken && !isTokenExpired(accessToken)) {
       api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
@@ -133,6 +132,10 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await AuthService.logout();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("auth_email");
+    delete api.defaults.headers.common["Authorization"];
     setAccessToken(null);
   };
 

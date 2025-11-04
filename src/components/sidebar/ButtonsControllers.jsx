@@ -1,6 +1,7 @@
 // src/components/sidebar/ButtonsControllers.jsx
 import { useState } from "react";
-import { sendRobotAction } from "../../api/connectionApiMqtt.js";
+import { sendRobotAction } from "../../api/unifiedApi.js";
+
 // 👆 Asegúrate de que el path coincida con tu estructura exacta (usa apiConnection.js o connectionApi.jsx según tu carpeta)
 
 

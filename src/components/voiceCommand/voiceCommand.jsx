@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { sendVoiceCommand } from "../../api/conectionApi"; 
+import { sendVoiceCommand } from "../../api/unifiedApi.js"; 
 
 import { motion } from "framer-motion";
 

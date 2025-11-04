@@ -1,5 +1,5 @@
 import React from "react";
-import VoiceCommand from "../voiceCommand/VoiceCommand.jsx";
+import VoiceCommand from "../voiceCommand/voiceCommand.jsx";
 import SpotifyHistorialTable from "../spotify/SpotifyTableHistorial.jsx";
 import SpotifyCommand from "../spotify/SpotifyCommand.jsx";
 

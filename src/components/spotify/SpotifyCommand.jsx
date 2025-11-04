@@ -1,6 +1,6 @@
 // src/components/spotify/SpotifyCommand.jsx
 import { useCallback, useEffect, useRef, useState } from "react";
-import { postSpotifyComando, getSpotifyStatus } from "../../api/conectionApi.js";
+import { postSpotifyComando, getSpotifyStatus } from "../../api/unifiedApi.js";
 
 export default function SpotifyCommand() {
   const [orden, setOrden] = useState("");
@@ -92,7 +92,7 @@ export default function SpotifyCommand() {
     <div className="w-full bg-neutral-900/60 border border-white/10 rounded-2xl p-4 sm:p-5">
       <form onSubmit={onSubmit} className="flex gap-2 items-center">
         <input
-          className="flex-1 rounded-xl bg-neutral-800/80 border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/60"
+          className="flex-1 rounded-xl bg-white-800/80 border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/60"
           type="text"
           placeholder="Ej: reproducí Bohemian Rhapsody de Queen"
           value={orden}
